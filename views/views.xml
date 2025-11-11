@@ -1,61 +1,119 @@
-
 <odoo>
   <data>
-    <!-- explicit list view definition -->
-    <!--
-    <record model="ir.ui.view" id="hfc_project_cost_aggregator.list">
-      <field name="name">hfc_project_cost_aggregator list</field>
-      <field name="model">hfc_project_cost_aggregator.hfc_project_cost_aggregator</field>
+
+    <!-- Tree/List View -->
+    <record model="ir.ui.view" id="view_project_cost_aggregator_tree">
+      <field name="name">hfc.project.cost.aggregator.tree</field>
+      <field name="model">hfc.project.cost.aggregator</field>
       <field name="arch" type="xml">
-        <tree>
-          <field name="name"/>
-          <field name="value"/>
-          <field name="value2"/>
+        <tree string="Projekt Kosten Übersicht" create="false" edit="false" delete="false">
+          <!-- Projekt Info -->
+          <field name="projekt_code" string="Code"/>
+          <field name="projekt_name" string="Projekt"/>
+
+          <!-- Ausgangsrechnungen (Umsatz) -->
+          <field name="anzahl_rechnungen" string="Anz. Rg." optional="show"/>
+          <field name="gesamt_rechnungsbetrag" string="Umsatz" sum="Total Umsatz" widget="monetary"/>
+          <field name="gesamt_offener_betrag" string="Offene Forderungen" optional="hide" widget="monetary"/>
+
+          <!-- Eingangsrechnungen (Kosten) -->
+          <field name="anzahl_lieferantenrechnungen" string="Anz. LR" optional="show"/>
+          <field name="gesamt_kosten" string="Material/Fremdkosten" sum="Total Kosten" widget="monetary"/>
+          <field name="gesamt_offene_kosten" string="Offene Verbindlichkeiten" optional="hide" widget="monetary"/>
+
+          <!-- Zeiterfassung -->
+          <field name="gebuchte_stunden" string="Stunden" sum="Total Stunden" widget="float_time"/>
+          <field name="kosten_gebuchte_stunden" string="Personalkosten" sum="Total Personalkosten" widget="monetary"/>
+
+          <!-- Deckungsbeitrag -->
+          <field name="deckungsbeitrag" string="Deckungsbeitrag" sum="Total DB" widget="monetary"
+                 decoration-success="deckungsbeitrag &gt; 0"
+                 decoration-danger="deckungsbeitrag &lt; 0"/>
+          <field name="deckungsbeitrag_prozent" string="DB %" widget="percentage"
+                 decoration-success="deckungsbeitrag_prozent &gt; 20"
+                 decoration-warning="deckungsbeitrag_prozent &gt;= 0 and deckungsbeitrag_prozent &lt;= 20"
+                 decoration-danger="deckungsbeitrag_prozent &lt; 0"/>
+
+          <!-- Zeitraum -->
+          <field name="erste_rechnung" string="Von" optional="hide"/>
+          <field name="letzte_rechnung" string="Bis" optional="hide"/>
+
+          <!-- Hidden fields -->
+          <field name="currency_id" invisible="1"/>
         </tree>
       </field>
     </record>
-    -->
 
-    <!-- actions opening views on models -->
-    <!--
-    <record model="ir.actions.act_window" id="hfc_project_cost_aggregator.action_window">
-      <field name="name">hfc_project_cost_aggregator window</field>
-      <field name="res_model">hfc_project_cost_aggregator.hfc_project_cost_aggregator</field>
-      <field name="view_mode">tree,form</field>
-    </record>
-    -->
-
-    <!-- server action to the one above -->
-    <!--
-    <record model="ir.actions.server" id="hfc_project_cost_aggregator.action_server">
-      <field name="name">hfc_project_cost_aggregator server</field>
-      <field name="model_id" ref="model_hfc_project_cost_aggregator_hfc_project_cost_aggregator"/>
-      <field name="state">code</field>
-      <field name="code">
-        action = {
-          "type": "ir.actions.act_window",
-          "view_mode": "tree,form",
-          "res_model": self._name,
-        }
+    <!-- Pivot View -->
+    <record model="ir.ui.view" id="view_project_cost_aggregator_pivot">
+      <field name="name">hfc.project.cost.aggregator.pivot</field>
+      <field name="model">hfc.project.cost.aggregator</field>
+      <field name="arch" type="xml">
+        <pivot string="Projekt Kosten Analyse">
+          <field name="projekt_name" type="row"/>
+          <field name="gesamt_rechnungsbetrag" type="measure"/>
+          <field name="gesamt_kosten" type="measure"/>
+          <field name="kosten_gebuchte_stunden" type="measure"/>
+          <field name="deckungsbeitrag" type="measure"/>
+          <field name="gebuchte_stunden" type="measure"/>
+        </pivot>
       </field>
     </record>
-    -->
 
-    <!-- Top menu item -->
-    <!--
-    <menuitem name="hfc_project_cost_aggregator" id="hfc_project_cost_aggregator.menu_root"/>
-    -->
-    <!-- menu categories -->
-    <!--
-    <menuitem name="Menu 1" id="hfc_project_cost_aggregator.menu_1" parent="hfc_project_cost_aggregator.menu_root"/>
-    <menuitem name="Menu 2" id="hfc_project_cost_aggregator.menu_2" parent="hfc_project_cost_aggregator.menu_root"/>
-    -->
-    <!-- actions -->
-    <!--
-    <menuitem name="List" id="hfc_project_cost_aggregator.menu_1_list" parent="hfc_project_cost_aggregator.menu_1"
-              action="hfc_project_cost_aggregator.action_window"/>
-    <menuitem name="Server to list" id="hfc_project_cost_aggregator" parent="hfc_project_cost_aggregator.menu_2"
-              action="hfc_project_cost_aggregator.action_server"/>
-    -->
+    <!-- Graph View -->
+    <record model="ir.ui.view" id="view_project_cost_aggregator_graph">
+      <field name="name">hfc.project.cost.aggregator.graph</field>
+      <field name="model">hfc.project.cost.aggregator</field>
+      <field name="arch" type="xml">
+        <graph string="Projekt Kosten Chart" type="bar">
+          <field name="projekt_name"/>
+          <field name="gesamt_rechnungsbetrag" type="measure"/>
+          <field name="gesamt_kosten" type="measure"/>
+          <field name="deckungsbeitrag" type="measure"/>
+        </graph>
+      </field>
+    </record>
+
+    <!-- Action -->
+    <record model="ir.actions.act_window" id="action_project_cost_aggregator">
+      <field name="name">Projekt Kostenauswertung</field>
+      <field name="res_model">hfc.project.cost.aggregator</field>
+      <field name="view_mode">tree,pivot,graph</field>
+      <field name="context">{}</field>
+      <field name="help" type="html">
+        <p class="o_view_nocontent_smiling_face">
+          Keine Projektdaten gefunden
+        </p>
+        <p>
+          Diese Ansicht zeigt aggregierte Kosten und Umsätze für Projekte basierend auf:
+          <ul>
+            <li>Ausgangsrechnungen (Umsatz)</li>
+            <li>Eingangsrechnungen (Material-/Fremdkosten)</li>
+            <li>Zeiterfassung (Personalkosten)</li>
+          </ul>
+        </p>
+      </field>
+    </record>
+
+    <!-- Menu Items -->
+    <menuitem
+      id="menu_project_cost_aggregator_root"
+      name="Projektauswertung"
+      sequence="100"
+      web_icon="hfc_project_cost_aggregator,static/description/icon.png"/>
+
+    <menuitem
+      id="menu_project_cost_aggregator_reports"
+      name="Berichte"
+      parent="menu_project_cost_aggregator_root"
+      sequence="10"/>
+
+    <menuitem
+      id="menu_project_cost_aggregator_list"
+      name="Projekt Kostenübersicht"
+      parent="menu_project_cost_aggregator_reports"
+      action="action_project_cost_aggregator"
+      sequence="10"/>
+
   </data>
 </odoo>

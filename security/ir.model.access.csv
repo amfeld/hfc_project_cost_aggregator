@@ -1,2 +1,3 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
-access_hfc_project_cost_aggregator_hfc_project_cost_aggregator,hfc_project_cost_aggregator.hfc_project_cost_aggregator,model_hfc_project_cost_aggregator_hfc_project_cost_aggregator,,1,0,0,0
+access_hfc_project_cost_aggregator_user,hfc.project.cost.aggregator.user,model_hfc_project_cost_aggregator,base.group_user,1,0,0,0
+access_hfc_project_cost_aggregator_manager,hfc.project.cost.aggregator.manager,model_hfc_project_cost_aggregator,account.group_account_manager,1,0,0,0
