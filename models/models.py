@@ -18,7 +18,7 @@ class ProjectCostAggregator(models.Model):
     # Ausgangsrechnungen (Umsatz)
     anzahl_rechnungen = fields.Integer(string='Anzahl Rechnungen', readonly=True)
     gesamt_rechnungsbetrag = fields.Monetary(string='Gesamt Rechnungsbetrag', readonly=True, currency_field='currency_id')
-    gesamt_offener_betrag = fields.Monetary(string='Offener Betrag', readonly=True, currency_field='currency_id')
+    gesamt_offener_betrag = fields.Monetary(string='Offene Forderungen', readonly=True, currency_field='currency_id')
 
     # Eingangsrechnungen (Kosten)
     anzahl_lieferantenrechnungen = fields.Integer(string='Anzahl Lieferantenrechnungen', readonly=True)
@@ -29,28 +29,8 @@ class ProjectCostAggregator(models.Model):
     gebuchte_stunden = fields.Float(string='Gebuchte Stunden', readonly=True, digits=(16, 2))
     kosten_gebuchte_stunden = fields.Monetary(string='Kosten Stunden', readonly=True, currency_field='currency_id')
 
-    # Berechnete Felder
-    deckungsbeitrag = fields.Monetary(string='Deckungsbeitrag', readonly=True, compute='_compute_margins', store=False, currency_field='currency_id')
-    deckungsbeitrag_prozent = fields.Float(string='DB %', readonly=True, compute='_compute_margins', store=False, digits=(16, 2))
-
-    # Zusätzliche Info
-    erste_rechnung = fields.Date(string='Erste Rechnung', readonly=True)
-    letzte_rechnung = fields.Date(string='Letzte Rechnung', readonly=True)
-
     # Währung (für Monetary-Felder)
     currency_id = fields.Many2one('res.currency', string='Währung', readonly=True)
-
-    @api.depends('gesamt_rechnungsbetrag', 'gesamt_kosten', 'kosten_gebuchte_stunden')
-    def _compute_margins(self):
-        """Berechne Deckungsbeitrag und Marge"""
-        for record in self:
-            gesamt_kosten = (record.gesamt_kosten or 0) + (record.kosten_gebuchte_stunden or 0)
-            record.deckungsbeitrag = (record.gesamt_rechnungsbetrag or 0) - gesamt_kosten
-
-            if record.gesamt_rechnungsbetrag and record.gesamt_rechnungsbetrag != 0:
-                record.deckungsbeitrag_prozent = (record.deckungsbeitrag / record.gesamt_rechnungsbetrag) * 100
-            else:
-                record.deckungsbeitrag_prozent = 0
 
     def init(self):
         """Erstelle PostgreSQL View für aggregierte Projektkosten"""

@@ -11,32 +11,17 @@
           <field name="projekt_code" string="Code"/>
           <field name="projekt_name" string="Projekt"/>
 
-          <!-- Ausgangsrechnungen (Umsatz) -->
-          <field name="anzahl_rechnungen" string="Anz. Rg." optional="show"/>
-          <field name="gesamt_rechnungsbetrag" string="Umsatz" sum="Total Umsatz" widget="monetary"/>
-          <field name="gesamt_offener_betrag" string="Offene Forderungen" optional="hide" widget="monetary"/>
+          <!-- Kundenrechnungen -->
+          <field name="gesamt_rechnungsbetrag" string="Kundenrechnung" sum="Total" widget="monetary"/>
+          <field name="gesamt_offener_betrag" string="Offene Forderungen" sum="Total" widget="monetary"/>
 
-          <!-- Eingangsrechnungen (Kosten) -->
-          <field name="anzahl_lieferantenrechnungen" string="Anz. LR" optional="show"/>
-          <field name="gesamt_kosten" string="Material/Fremdkosten" sum="Total Kosten" widget="monetary"/>
-          <field name="gesamt_offene_kosten" string="Offene Verbindlichkeiten" optional="hide" widget="monetary"/>
+          <!-- Lieferantenrechnungen -->
+          <field name="gesamt_kosten" string="Lieferantenrechnung" sum="Total" widget="monetary"/>
+          <field name="gesamt_offene_kosten" string="Offene Verbindlichkeiten" sum="Total" widget="monetary"/>
 
           <!-- Zeiterfassung -->
-          <field name="gebuchte_stunden" string="Stunden" sum="Total Stunden" widget="float_time"/>
-          <field name="kosten_gebuchte_stunden" string="Personalkosten" sum="Total Personalkosten" widget="monetary"/>
-
-          <!-- Deckungsbeitrag -->
-          <field name="deckungsbeitrag" string="Deckungsbeitrag" sum="Total DB" widget="monetary"
-                 decoration-success="deckungsbeitrag &gt; 0"
-                 decoration-danger="deckungsbeitrag &lt; 0"/>
-          <field name="deckungsbeitrag_prozent" string="DB %" widget="percentage"
-                 decoration-success="deckungsbeitrag_prozent &gt; 20"
-                 decoration-warning="deckungsbeitrag_prozent &gt;= 0 and deckungsbeitrag_prozent &lt;= 20"
-                 decoration-danger="deckungsbeitrag_prozent &lt; 0"/>
-
-          <!-- Zeitraum -->
-          <field name="erste_rechnung" string="Von" optional="hide"/>
-          <field name="letzte_rechnung" string="Bis" optional="hide"/>
+          <field name="gebuchte_stunden" string="Stunden" sum="Total" widget="float_time"/>
+          <field name="kosten_gebuchte_stunden" string="Personalkosten" sum="Total" widget="monetary"/>
 
           <!-- Hidden fields -->
           <field name="currency_id" invisible="1"/>
@@ -54,7 +39,6 @@
           <field name="gesamt_rechnungsbetrag" type="measure"/>
           <field name="gesamt_kosten" type="measure"/>
           <field name="kosten_gebuchte_stunden" type="measure"/>
-          <field name="deckungsbeitrag" type="measure"/>
           <field name="gebuchte_stunden" type="measure"/>
         </pivot>
       </field>
@@ -69,7 +53,7 @@
           <field name="projekt_name"/>
           <field name="gesamt_rechnungsbetrag" type="measure"/>
           <field name="gesamt_kosten" type="measure"/>
-          <field name="deckungsbeitrag" type="measure"/>
+          <field name="kosten_gebuchte_stunden" type="measure"/>
         </graph>
       </field>
     </record>
