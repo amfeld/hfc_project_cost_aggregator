@@ -17,8 +17,9 @@ class ProjectCostAggregator(models.Model):
 
     # Ausgangsrechnungen (Umsatz)
     anzahl_rechnungen = fields.Integer(string='Anzahl Rechnungen', readonly=True)
-    gesamt_rechnungsbetrag = fields.Monetary(string='Gesamt Rechnungsbetrag', readonly=True, currency_field='currency_id')
-    gesamt_offener_betrag = fields.Monetary(string='Offene Forderungen', readonly=True, currency_field='currency_id')
+    gesamt_rechnungsbetrag = fields.Monetary(string='Kundenrechnung (Brutto)', readonly=True, currency_field='currency_id')
+    gesamt_gezahlt = fields.Monetary(string='Tatsächlich Bezahlt', readonly=True, currency_field='currency_id')
+    gesamt_differenz = fields.Monetary(string='Differenz (Abzüge/Offen)', readonly=True, currency_field='currency_id')
 
     # Eingangsrechnungen (Kosten)
     anzahl_lieferantenrechnungen = fields.Integer(string='Anzahl Lieferantenrechnungen', readonly=True)
@@ -44,55 +45,53 @@ class ProjectCostAggregator(models.Model):
                     aaa.code AS projekt_code,
 
                     -- Ausgangsrechnungen (Umsatz)
-                    COUNT(DISTINCT CASE WHEN am.move_type IN ('out_invoice', 'out_refund') THEN am.id END) AS anzahl_rechnungen,
-                    SUM(CASE WHEN am.move_type IN ('out_invoice', 'out_refund')
-                        THEN am.amount_total * COALESCE((aml.analytic_distribution->>aaa.id::text)::numeric / 100, 0)
-                        ELSE 0 END
-                    ) AS gesamt_rechnungsbetrag,
-                    SUM(CASE WHEN am.move_type IN ('out_invoice', 'out_refund')
-                        THEN am.amount_residual * COALESCE((aml.analytic_distribution->>aaa.id::text)::numeric / 100, 0)
-                        ELSE 0 END
-                    ) AS gesamt_offener_betrag,
+                    COUNT(DISTINCT CASE WHEN inv.move_type IN ('out_invoice', 'out_refund') THEN inv.id END) AS anzahl_rechnungen,
+                    COALESCE(SUM(CASE WHEN inv.move_type IN ('out_invoice', 'out_refund')
+                        THEN inv.amount_total * COALESCE((line.analytic_distribution->>aaa.id::text)::numeric / 100, 0)
+                        ELSE 0 END), 0) AS gesamt_rechnungsbetrag,
+                    COALESCE(SUM(CASE WHEN inv.move_type IN ('out_invoice', 'out_refund')
+                        THEN (inv.amount_total - inv.amount_residual) * COALESCE((line.analytic_distribution->>aaa.id::text)::numeric / 100, 0)
+                        ELSE 0 END), 0) AS gesamt_gezahlt,
+                    COALESCE(SUM(CASE WHEN inv.move_type IN ('out_invoice', 'out_refund')
+                        THEN inv.amount_residual * COALESCE((line.analytic_distribution->>aaa.id::text)::numeric / 100, 0)
+                        ELSE 0 END), 0) AS gesamt_differenz,
 
                     -- Eingangsrechnungen (Kosten)
-                    COUNT(DISTINCT CASE WHEN am.move_type IN ('in_invoice', 'in_refund') THEN am.id END) AS anzahl_lieferantenrechnungen,
-                    SUM(CASE WHEN am.move_type IN ('in_invoice', 'in_refund')
-                        THEN am.amount_total * COALESCE((aml.analytic_distribution->>aaa.id::text)::numeric / 100, 0)
-                        ELSE 0 END
-                    ) AS gesamt_kosten,
-                    SUM(CASE WHEN am.move_type IN ('in_invoice', 'in_refund')
-                        THEN am.amount_residual * COALESCE((aml.analytic_distribution->>aaa.id::text)::numeric / 100, 0)
-                        ELSE 0 END
-                    ) AS gesamt_offene_kosten,
+                    COUNT(DISTINCT CASE WHEN inv.move_type IN ('in_invoice', 'in_refund') THEN inv.id END) AS anzahl_lieferantenrechnungen,
+                    COALESCE(SUM(CASE WHEN inv.move_type IN ('in_invoice', 'in_refund')
+                        THEN inv.amount_total * COALESCE((line.analytic_distribution->>aaa.id::text)::numeric / 100, 0)
+                        ELSE 0 END), 0) AS gesamt_kosten,
+                    COALESCE(SUM(CASE WHEN inv.move_type IN ('in_invoice', 'in_refund')
+                        THEN inv.amount_residual * COALESCE((line.analytic_distribution->>aaa.id::text)::numeric / 100, 0)
+                        ELSE 0 END), 0) AS gesamt_offene_kosten,
 
                     -- Zeiterfassung
-                    COALESCE(SUM(aal.unit_amount), 0) AS gebuchte_stunden,
-                    COALESCE(SUM(aal.amount), 0) AS kosten_gebuchte_stunden,
+                    COALESCE(SUM(ts.unit_amount), 0) AS gebuchte_stunden,
+                    COALESCE(SUM(ts.amount), 0) AS kosten_gebuchte_stunden,
 
                     -- Zusätzliche Info
-                    MIN(am.invoice_date) AS erste_rechnung,
-                    MAX(am.invoice_date) AS letzte_rechnung,
+                    MIN(inv.invoice_date) AS erste_rechnung,
+                    MAX(inv.invoice_date) AS letzte_rechnung,
 
-                    -- Währung (aus Company)
-                    (SELECT currency_id FROM res_company WHERE id = am.company_id LIMIT 1) AS currency_id
+                    -- Währung
+                    (SELECT currency_id FROM res_company WHERE id = aaa.company_id LIMIT 1) AS currency_id
 
                 FROM account_analytic_account aaa
 
-                -- Rechnungszeilen mit diesem analytischen Konto
-                INNER JOIN account_move_line aml
-                    ON aml.analytic_distribution ? aaa.id::text
-                    AND aml.display_type IS NULL
+                -- Rechnungszeilen mit analytischer Verteilung
+                LEFT JOIN account_move_line line
+                    ON line.analytic_distribution ? aaa.id::text
+                    AND line.display_type IS NULL
 
-                -- Rechnung
-                INNER JOIN account_move am
-                    ON am.id = aml.move_id
-                    AND am.move_type IN ('out_invoice', 'out_refund', 'in_invoice', 'in_refund')
-                    AND am.state = 'posted'
+                -- Rechnungen
+                LEFT JOIN account_move inv
+                    ON inv.id = line.move_id
+                    AND inv.move_type IN ('out_invoice', 'out_refund', 'in_invoice', 'in_refund')
+                    AND inv.state = 'posted'
 
-                -- Zeiterfassung (Analytic Lines)
-                LEFT JOIN account_analytic_line aal
-                    ON aal.account_id = aaa.id
-                    AND aal.project_id IS NOT NULL
+                -- Zeiterfassung
+                LEFT JOIN account_analytic_line ts
+                    ON ts.account_id = aaa.id
 
                 WHERE
                     aaa.plan_id = (
@@ -100,17 +99,13 @@ class ProjectCostAggregator(models.Model):
                         WHERE name ILIKE '%%projekt%%'
                         LIMIT 1
                     )
+                    AND aaa.active = TRUE
 
                 GROUP BY
                     aaa.id,
                     aaa.name,
                     aaa.code,
-                    am.company_id
-
-                HAVING
-                    SUM(am.amount_total *
-                        COALESCE((aml.analytic_distribution->>aaa.id::text)::numeric / 100, 0)
-                    ) > 0
+                    aaa.company_id
             )
         """ % self._table
         self.env.cr.execute(query)

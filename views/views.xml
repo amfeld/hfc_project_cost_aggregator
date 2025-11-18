@@ -12,8 +12,9 @@
           <field name="projekt_name" string="Projekt"/>
 
           <!-- Kundenrechnungen -->
-          <field name="gesamt_rechnungsbetrag" string="Kundenrechnung" sum="Total" widget="monetary"/>
-          <field name="gesamt_offener_betrag" string="Offene Forderungen" sum="Total" widget="monetary"/>
+          <field name="gesamt_rechnungsbetrag" string="Kundenrechnung (Brutto)" sum="Total" widget="monetary"/>
+          <field name="gesamt_gezahlt" string="Tatsächlich Bezahlt" sum="Total" widget="monetary"/>
+          <field name="gesamt_differenz" string="Differenz (Abzüge/Offen)" sum="Total" widget="monetary"/>
 
           <!-- Lieferantenrechnungen -->
           <field name="gesamt_kosten" string="Lieferantenrechnung" sum="Total" widget="monetary"/>
@@ -37,6 +38,8 @@
         <pivot string="Projekt Kosten Analyse">
           <field name="projekt_name" type="row"/>
           <field name="gesamt_rechnungsbetrag" type="measure"/>
+          <field name="gesamt_gezahlt" type="measure"/>
+          <field name="gesamt_differenz" type="measure"/>
           <field name="gesamt_kosten" type="measure"/>
           <field name="kosten_gebuchte_stunden" type="measure"/>
           <field name="gebuchte_stunden" type="measure"/>
