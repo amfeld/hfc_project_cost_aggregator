@@ -96,7 +96,7 @@ class ProjectCostAggregator(models.Model):
                 WHERE
                     aaa.plan_id = (
                         SELECT id FROM account_analytic_plan
-                        WHERE name ILIKE '%%projekt%%'
+                        WHERE LOWER(name) LIKE LOWER('%%projekt%%')
                         LIMIT 1
                     )
                     AND aaa.active = TRUE
